@@ -63,8 +63,9 @@ d3.csv("data/links.csv", function(error, links) {
   link = link
     .data(links)
     .enter().append("path")
-      .attr("d", d3.sankeyLinkHorizontal())
-      .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+        .attr("xlink:href", function(d) { return "http://omniexplorer.info/lookuptx.aspx?txid=" + links[d.index];})
+        .attr("d", d3.sankeyLinkHorizontal())
+        .attr("stroke-width", function(d) { return Math.max(1, d.width); });
 
   link.append("title")
       .text(function(d) { return d.source.address + " → " + d.target.address + "\n" + format(d.value); });
@@ -74,12 +75,13 @@ d3.csv("data/links.csv", function(error, links) {
     .enter().append("g");
 
   node.append("rect")
-      .attr("x", function(d) { return d.x0; })
-      .attr("y", function(d) { return d.y0; })
-      .attr("height", function(d) { return d.y1 - d.y0; })
-      .attr("width", function(d) { return widthScale(d.balance); })
-      .attr("fill", function(d) { return color(d.address); })
-      .attr("stroke", "#000");
+        .attr("xlink:href", function(d) { return "http://omniexplorer.info/lookupadd.aspx?address=" + d.address;})
+        .attr("x", function(d) { return d.x0; })
+        .attr("y", function(d) { return d.y0; })
+        .attr("height", function(d) { return d.y1 - d.y0; })
+        .attr("width", function(d) { return widthScale(d.balance); })
+        .attr("fill", function(d) { return color(d.address); })
+        .attr("stroke", "#000");
 
   node.append("text")
       .attr("x", function(d) { return d.x0 - 6; })
