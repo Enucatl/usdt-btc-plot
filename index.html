@@ -40,13 +40,23 @@ d3.csv("data/links.csv", function(error, links) {
             source: link.source,
             target: link.target,
             value: +link.value,
-        }
-    })
+        };
+    });
+    nodes = nodes.map(function(node) {
+        return {
+            address: node.address,
+            balance: +node.balance,
+        };
+    });
+
     graph = {
         nodes: nodes,
-        links: links
-    }
+        links: links,
+    };
 
+    widthScale = d3.scaleLinear()
+        .domain([0, d3.max(graph.nodes, function(d) {return d.balance})])
+        .range([10, 25])
     console.log(graph.nodes);
     sankey(graph);
 
@@ -67,7 +77,7 @@ d3.csv("data/links.csv", function(error, links) {
       .attr("x", function(d) { return d.x0; })
       .attr("y", function(d) { return d.y0; })
       .attr("height", function(d) { return d.y1 - d.y0; })
-      .attr("width", function(d) { return d.x1 - d.x0; })
+      .attr("width", function(d) { return widthScale(d.balance); })
       .attr("fill", function(d) { return color(d.address); })
       .attr("stroke", "#000");
 
