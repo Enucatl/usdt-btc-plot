@@ -30,7 +30,7 @@ def main(verbose, nodes, links):
         "id",
         "source",
         "target",
-        "amount",
+        "value",
     ])
     known_nodes = set()
     new_nodes = set(["3MbYQMMmSkC3AgWkj9FMo5LsPTW1zBTwXL"])
