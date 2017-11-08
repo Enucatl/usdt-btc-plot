@@ -28,6 +28,7 @@ def main(verbose, nodes, links):
     link_writer = csv.writer(links)
     link_writer.writerow([
         "id",
+        "timestamp",
         "source",
         "target",
         "value",
@@ -84,7 +85,7 @@ def main(verbose, nodes, links):
             if source != node or amount < 100000:
                 continue
             link_writer.writerow([
-                txid, source, target, amount
+                txid, blocktime, source, target, amount
             ])
             if target not in known_nodes:
                 new_nodes.update([target])
