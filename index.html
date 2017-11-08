@@ -82,7 +82,14 @@ d3.csv("data/links.csv", function(error, links) {
       .attr("text-anchor", "start");
 
   node.append("title")
-      .text(function(d) { return d.address + "\ncurrent balance: " + format(d.balance); });
+        .text(function(d) {
+            return (d.address
+                + "\ncurrent balance: "
+                + format(d.balance)
+                + "\namount received: "
+                + format(d.value)
+                );
+        });
 })});
 
 </script>
