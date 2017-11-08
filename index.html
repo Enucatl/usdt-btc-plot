@@ -9,8 +9,8 @@ var svg = d3.select("svg"),
     height = +svg.attr("height");
 
 var formatNumber = d3.format(",.0f"),
-    format = function(d) { return formatNumber(d) + " TWh"; },
-    color = d3.scaleOrdinal(d3.schemeCategory10);
+    format = function(d) { return formatNumber(d) + " USDT"; },
+    color = d3.scaleOrdinal(d3.schemeCategory20);
 
 var sankey = d3.sankey()
     .nodeWidth(15)
@@ -57,7 +57,7 @@ d3.csv("data/links.csv", function(error, links) {
       .attr("stroke-width", function(d) { return Math.max(1, d.width); });
 
   link.append("title")
-      .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+      .text(function(d) { return d.source.address + " → " + d.target.address + "\n" + format(d.value); });
 
   node = node
     .data(nodes)
@@ -68,7 +68,7 @@ d3.csv("data/links.csv", function(error, links) {
       .attr("y", function(d) { return d.y0; })
       .attr("height", function(d) { return d.y1 - d.y0; })
       .attr("width", function(d) { return d.x1 - d.x0; })
-      .attr("fill", function(d) { return color(d.name.replace(/ .*/, "")); })
+      .attr("fill", function(d) { return color(d.address); })
       .attr("stroke", "#000");
 
   node.append("text")
@@ -76,13 +76,13 @@ d3.csv("data/links.csv", function(error, links) {
       .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
       .attr("dy", "0.35em")
       .attr("text-anchor", "end")
-      .text(function(d) { return d.name; })
+      .text(function(d) { return d.address.substring(0, 4); })
     .filter(function(d) { return d.x0 < width / 2; })
       .attr("x", function(d) { return d.x1 + 6; })
       .attr("text-anchor", "start");
 
   node.append("title")
-      .text(function(d) { return d.name + "\n" + format(d.value); });
+      .text(function(d) { return d.address + "\ncurrent balance:" + format(d.balance); });
 })});
 
 </script>
