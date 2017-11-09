@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 @click.argument("links", type=click.File("w"))
 def main(verbose, nodes, links):
     current_node = 0
+    min_transaction_size = 10000
+    min_transaction_timestamp = 1509742213
     logging.config.dictConfig(log_config(verbose))
     node_writer = csv.writer(nodes)
     node_writer.writerow([
@@ -60,7 +62,7 @@ def main(verbose, nodes, links):
         known_nodes.update([node])
         logger.debug("found %s transactions", len(transactions))
         for transaction in transactions:
-            time.sleep(1)
+            time.sleep(0.2)
             params = {
                 "api": "gettx",
                 "txid": transaction
@@ -74,7 +76,7 @@ def main(verbose, nodes, links):
             # keep only last two batches of 25 + 20 MUSDT
             try:
                 blocktime = t["blocktime"]
-                if blocktime < 1509742213:
+                if blocktime < min_transaction_timestamp:
                     break
                 txid = t["txid"]
                 source = t["sendingaddress"]
@@ -82,14 +84,14 @@ def main(verbose, nodes, links):
                 amount = float(t["amount"])
             except KeyError:
                 continue
-            if source != node or amount < 100000:
+            if source != node or amount < min_transaction_size:
                 continue
             link_writer.writerow([
                 txid, blocktime, source, target, amount
             ])
             if target not in known_nodes:
                 new_nodes.update([target])
-        time.sleep(10)
+        time.sleep(1)
         logger.debug("new nodes: %s", new_nodes)
         current_node += 1
         logger.debug("analized %s nodes", current_node)
