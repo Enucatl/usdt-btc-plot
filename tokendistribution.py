@@ -18,11 +18,12 @@ txid_re = re.compile("txid")
 
 
 def check_transaction_link(tag):
-    return (
+    result = (
         tag.name == "a"
         and tag.has_attr("href")
         and txid_re.search(tag["href"])
         and tag.find("img", src="assets/img/token31.png"))
+    return result
 
 
 def recent_transactions(
@@ -40,7 +41,14 @@ def recent_transactions(
         browser.open(browser_url.format(address, page_number))
         page = browser.get_current_page()
         transactions = page.find_all(check_transaction_link)
+        prices = [tag.parent.parent.parent.parent.find_next_sibling()
+                  for tag in transactions]
+        prices = [float(p.h4.text) for p in prices]
+        transactions = [transactions[i]
+                        for i, p in enumerate(prices)
+                        if i == len(prices) - 1 or p > min_transaction_size]
         logger.debug("found %s transactions", len(transactions))
+        logger.debug("found %s large transactions", len(transactions))
         for transaction in transactions:
             time.sleep(0.2)
             txid = transaction["href"][len("lookuptx.aspx?txid="):]
@@ -81,9 +89,10 @@ def recent_transactions(
 @click.option("-v", "--verbose", count=True)
 @click.argument("nodes", type=click.File("w"))
 @click.argument("links", type=click.File("w"))
-def main(verbose, nodes, links):
+@click.option("--threshold", type=int, default=100000)
+def main(verbose, nodes, links, threshold):
     current_node = 0
-    min_transaction_size = 100000
+    min_transaction_size = threshold
     min_transaction_timestamp = 1509742213
     logging.config.dictConfig(log_config(verbose))
     node_writer = csv.writer(nodes)
@@ -102,7 +111,7 @@ def main(verbose, nodes, links):
     known_nodes = set()
     new_nodes = set(["3MbYQMMmSkC3AgWkj9FMo5LsPTW1zBTwXL"])
     while new_nodes:
-        logger.debug("found %s new nodes", len(new_nodes))
+        logger.info("found %s new nodes", len(new_nodes))
         node = new_nodes.pop()
         params = {
             "api": "getbalance",
@@ -130,7 +139,7 @@ def main(verbose, nodes, links):
             if target not in known_nodes:
                 new_nodes.add(target)
         current_node += 1
-        logger.debug("analized %s nodes", current_node)
+        logger.info("analized %s nodes", current_node)
 
 
 if __name__ == "__main__":

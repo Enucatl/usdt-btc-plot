@@ -2,8 +2,8 @@
 
 ```
 wget https://www.bfxdata.com/csv/vwapHourlyBTCUSD.csv
-sed 's/"Vwap (BTCUSD)"/Vwap.BTCUSD/' vwapHourlyBTCUSD.csv > btc.csv
-python tokencreation.py usdt.csv
+sed 's/"Vwap (BTCUSD)"/Vwap.BTCUSD/' vwapHourlyBTCUSD.csv > data/btc.csv
+python tokencreation.py data/usdt.csv
 ```
 
 # plot
