@@ -7,6 +7,7 @@ import logging
 import logging.config
 import mechanicalsoup as ms
 import re
+from datetime import datetime
 
 
 from log_config import log_config
@@ -15,6 +16,15 @@ from log_config import log_config
 logger = logging.getLogger(__name__)
 url = "http://omniexplorer.info/ask.aspx"
 txid_re = re.compile("txid")
+
+
+def find_table_field(string):
+    def f(tag):
+        result = (
+            tag.name == "td"
+            and tag.string == string)
+        return result
+    return f
 
 
 def check_transaction_link(tag):
@@ -30,48 +40,61 @@ def recent_transactions(
         address,
         min_transaction_timestamp,
         min_transaction_size):
-    browser_url = "http://omnichest.info/lookupadd.aspx?address={}&page={}"
+    address_url = "http://omnichest.info/lookupadd.aspx?address={}&page={}"
+    transaction_url = "https://omniexplorer.info/lookuptx.aspx?txid={}"
     browser = ms.StatefulBrowser()
     confirmed_transactions = []
     transactions_too_old = False
     page_number = 1
     transactions = True
     while (not transactions_too_old) and transactions:
-        time.sleep(0.2)
-        browser.open(browser_url.format(address, page_number))
+        browser.open(address_url.format(address, page_number))
         page = browser.get_current_page()
         transactions = page.find_all(check_transaction_link)
-        prices = [tag.parent.parent.parent.parent.find_next_sibling()
+        prices = [tag.parent.parent.parent.parent.find_next_sibling().h4.string
                   for tag in transactions]
-        prices = [float(p.h4.text) for p in prices]
+        prices = [float(p)
+                  for p in prices
+                  if p != "N/A"
+                 ]
         transactions = [transactions[i]
                         for i, p in enumerate(prices)
                         if i == len(prices) - 1 or p > min_transaction_size]
         logger.debug("found %s transactions", len(transactions))
         logger.debug("found %s large transactions", len(transactions))
         for transaction in transactions:
-            time.sleep(0.2)
             txid = transaction["href"][len("lookuptx.aspx?txid="):]
             logger.debug("looking for transaction %s", txid)
-            params = {
-                "api": "gettx",
-                "txid": txid
+            browser.open(transaction_url.format(txid))
+            page = browser.get_current_page()
+            datetime_text = page.find("span", id="ldatetime").string
+            datetime_format = "%m/%d/%Y %I:%M:%S %p"
+            blocktime = int((
+                datetime.strptime(datetime_text, datetime_format) -
+                datetime(1970, 1, 1)
+            ).total_seconds())
+            try:
+                amount = float(page.find("span", id="lamount").string)
+            except ValueError:
+                amount = 0
+            valid = page.find(string="CONFIRMED") == "CONFIRMED"
+            source = page.find(find_table_field("Sender")).find_next_sibling().a.string
+            try:
+                target = page.find(find_table_field("Recipient")).find_next_sibling().a.string
+            except AttributeError:
+                target = ""
+            token = page.find(find_table_field("Token")).find_next_sibling().a.string
+            t_type = page.find("h4").text.replace(txid, "")
+            t = {
+                "txid": txid,
+                "source": source,
+                "target": target,
+                "amount": amount,
+                "blocktime": blocktime,
+                "token": token,
+                "type": t_type,
+                "valid": valid,
             }
-            response = requests.get(url, params=params)
-            try:
-                logger.debug("transaction %s", response.text)
-                t = json.loads("{" + response.text + "}")
-            except json.decoder.JSONDecodeError:
-                continue
-            try:
-                blocktime = t["blocktime"]
-                txid = t["txid"]
-                source = t["sendingaddress"]
-                target = t["referenceaddress"]
-                amount = float(t["amount"])
-                valid = t["valid"]
-            except KeyError:
-                continue
             if blocktime < min_transaction_timestamp:
                 transactions_too_old = True
                 break

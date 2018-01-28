@@ -8,8 +8,8 @@ library(scales)
 library(zoo)
 
 commandline_parser = ArgumentParser(description="plot usdt data")
-commandline_parser$add_argument("usdt", nargs="?", default="usdt.csv")
-commandline_parser$add_argument("btc", nargs="?", default="btc.csv")
+commandline_parser$add_argument("usdt", nargs="?", default="data/usdt.csv")
+commandline_parser$add_argument("btc", nargs="?", default="data/btc.csv")
 args = commandline_parser$parse_args()
 
 usdt = fread(args$usdt)
@@ -23,18 +23,21 @@ merged[, filledvwap := filled]
 filledvwap = merged[!is.na(amount), filledvwap]
 usdt[, filledvwap := filledvwap]
 print(usdt)
+print(btc)
 
-start_date = "2017-01-01"
+start_date = "2017-06-01"
 plot = ggplot(btc[date > start_date,]) +
     geom_line(aes(x=date, y=Vwap.BTCUSD)) +
     geom_point(data=usdt[date > start_date, ], aes(x=date, y=filledvwap, size=amount), colour="red") +
-    scale_size_area(breaks=c(1e7, 2e7, 3e7), labels=c("10M", "20M", "30M"), name="generated\nUSDT") +
-    scale_x_datetime() +
+    scale_size_area(breaks=c(1e7, 5e7, 10e7), labels=c("10M", "50M", "100M"), name="generated\nUSDT") +
+    scale_x_datetime(labels=date_format("%m/%Y")) +
+    theme(axis.text.x=element_text(angle=60, hjust=1)) +
     xlab("date") +
     ylab("BTC hourly vwap")
-print(plot)
-width = 10
+
+width = 20
 factor = 0.618
 height = factor * width
+print(plot)
 ggsave("plot.png", plot, width=width, height=height, dpi=300)
 invisible(readLines("stdin", n=1))

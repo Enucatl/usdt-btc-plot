@@ -8,5 +8,5 @@ python tokencreation.py data/usdt.csv
 
 # plot
 ```
-./plot.R usdt.csv btc.csv
+./plot.R data/usdt.csv data/btc.csv
 ```
